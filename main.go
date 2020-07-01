@@ -271,5 +271,7 @@ func main() {
 		log.Fatal("Missing Last.fm API token.")
 	}
 
-	fetchScrobbles(*apiTokenPtr, *usernamePtr)
+	scrobbles := fetchScrobbles(*apiTokenPtr, *usernamePtr)
+	formattedScrobbles := formatScrobbles(scrobbles, *formatPtr)
+	fmt.Print(formattedScrobbles)
 }
