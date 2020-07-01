@@ -164,6 +164,10 @@ func parsedRawResponse(input []byte) string {
 	return string(bytes[:])
 }
 
+func buildList(body []byte) string {
+	scrobbles := TopLevel{}
+	var output string
+
 	jsonErr := json.Unmarshal(body, &scrobbles)
 	if jsonErr != nil {
 		log.Fatal(jsonErr)
@@ -193,8 +197,10 @@ func parsedRawResponse(input []byte) string {
 		}
 		parsedDate := time.Unix(date, 0).UTC()
 
-		fmt.Printf("%02d: %s - %s [%s] at %s\n", i+1, artist, song, album, parsedDate)
+		output = output + fmt.Sprintf("%02d: %s - %s [%s] at %s\n", i+1, artist, song, album, parsedDate.String())
 	}
+	return output
+}
 
 	// For debugging TODO: Create function for this
 	// bytes, err := json.Marshal(scrobbles.Recenttracks)
