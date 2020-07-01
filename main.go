@@ -149,7 +149,21 @@ func fetchScrobbles(apiKey string, username string) []byte {
 
 	return body
 }
+
+func parsedRawResponse(input []byte) string {
 	scrobbles := TopLevel{}
+	jsonErr := json.Unmarshal(input, &scrobbles)
+	if jsonErr != nil {
+		log.Fatal(jsonErr)
+	}
+
+	bytes, err := json.Marshal(scrobbles.Recenttracks)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(bytes[:])
+}
+
 	jsonErr := json.Unmarshal(body, &scrobbles)
 	if jsonErr != nil {
 		log.Fatal(jsonErr)
