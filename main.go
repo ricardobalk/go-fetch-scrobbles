@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
