@@ -88,7 +88,7 @@ const (
 /* End Types*/
 
 func fetchScrobbles(apiKey string, username string) {
-	var apiEndpoint string = "http://ws.audioscrobbler.com/2.0/"
+	var apiEndpoint = "http://ws.audioscrobbler.com/2.0/"
 
 	httpClient := http.Client{
 		Timeout: time.Second * 30,
