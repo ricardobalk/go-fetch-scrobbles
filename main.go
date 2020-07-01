@@ -202,10 +202,62 @@ func buildList(body []byte) string {
 	return output
 }
 
-	// For debugging TODO: Create function for this
-	// bytes, err := json.Marshal(scrobbles.Recenttracks)
-	// fmt.Println(string(bytes[:]))
-	// fmt.Println(string(body[:]))
+func buildJSONResponse(input []byte) string {
+	scrobbles := TopLevel{}
+	output := Scrobbles{}
+
+	jsonErr := json.Unmarshal(input, &scrobbles)
+	if jsonErr != nil {
+		log.Fatal(jsonErr)
+	}
+
+	tracks := scrobbles.Recenttracks.Track
+	for i := range tracks {
+		artist := tracks[i].Artist.Text
+		song := tracks[i].Name
+		album := tracks[i].Album.Text
+		var date int64
+
+		if tracks[i].Date != nil {
+			val, err := strconv.ParseInt(tracks[i].Date.Uts, 10, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			date = val
+		} else {
+			if tracks[i].Attr != nil {
+				_, err := strconv.ParseBool(tracks[i].Attr.Nowplaying)
+				if err != nil {
+					log.Fatal(err)
+				}
+				date = time.Now().Unix()
+			}
+		}
+		parsedDate := time.Unix(date, 0).UTC()
+		data := Scrobble{artist, song, album, When{date, parsedDate.String()}}
+		output = append(output, data)
+	}
+
+	bytes, err := json.Marshal(output)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(bytes[:])
+}
+
+func formatScrobbles(input []byte, format string) string {
+	switch format {
+	case "raw":
+		return parsedRawResponse(input)
+	case "list":
+		return buildList(input)
+	case "json":
+		return buildJSONResponse(input)
+	default:
+		flag.Usage()
+		log.Fatal("Invalid output format.")
+	}
+	return ""
 }
 
 func main() {
