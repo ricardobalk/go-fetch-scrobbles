@@ -113,7 +113,7 @@ type When struct {
 
 /* End Types*/
 
-func fetchScrobbles(apiKey string, username string) {
+func fetchScrobbles(apiKey string, username string) []byte {
 	var apiEndpoint = "http://ws.audioscrobbler.com/2.0/"
 
 	httpClient := http.Client{
@@ -147,6 +147,8 @@ func fetchScrobbles(apiKey string, username string) {
 		log.Fatal(readErr)
 	}
 
+	return body
+}
 	scrobbles := TopLevel{}
 	jsonErr := json.Unmarshal(body, &scrobbles)
 	if jsonErr != nil {
