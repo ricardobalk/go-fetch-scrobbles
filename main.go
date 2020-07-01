@@ -263,6 +263,7 @@ func formatScrobbles(input []byte, format string) string {
 func main() {
 	apiTokenPtr := flag.String("api-token", "", "Last.fm API Token")
 	usernamePtr := flag.String("username", "Batmaniosaurus", "Username")
+	formatPtr := flag.String("format", "list", "Format of output, currently allowed values are default, list or raw.\nDefault output means processed JSON, list shows a list of songs and raw shows response data from Last.fm.")
 	flag.Parse()
 
 	if *apiTokenPtr == "" {
