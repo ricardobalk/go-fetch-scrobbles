@@ -18,9 +18,9 @@ git clone https://github.com/ricardobalk/go-fetch-scrobbles .
 
 - To receive a list of [Batmaniosaurus'](https://last.fm/user/Batmaniosaurus) 50 last played tracks:
 
-  ```sh
+```sh
   go run main.go --api-token "$LAST_FM_API_TOKEN" --username "Batmaniosaurus"
-  ```
+```
 
 <details><summary>Example output</summary><pre>01: Nina June - Shadows & Riddles [Shadows & Riddles] at 2020-07-03 14:12:40 +0000 UTC
 02: Miss Montreal - House Upon The Hill [House Upon The Hill] at 2020-07-03 14:09:23 +0000 UTC
@@ -28,7 +28,7 @@ git clone https://github.com/ricardobalk/go-fetch-scrobbles .
 04: Racoon - Het Is Al Laat Toch [Het Is Al Laat Toch] at 2020-07-03 14:01:47 +0000 UTC
 05: Nina June - Summersnow [Summersnow] at 2020-07-03 13:58:25 +0000 UTC
 ...
-50: Bløf - Alles is Liefde [Hier - Het Beste Van 20 Jaar Bløf] at 2020-07-01 18:42:13 +0000 UTC</pre</details>
+50: Bløf - Alles is Liefde [Hier - Het Beste Van 20 Jaar Bløf] at 2020-07-01 18:42:13 +0000 UTC</pre></details>
 
 - To receive JSON-formatted output:
 
@@ -41,6 +41,7 @@ go run main.go --api-token "$LAST_FM_API_TOKEN" --username "Batmaniosaurus" --fo
 </details>
 
 - To receive raw response data from Last.fm:
+
 ```sh
 go run main.go --api-token "$LAST_FM_API_TOKEN" --username "Batmaniosaurus" --format "raw"
 ```
