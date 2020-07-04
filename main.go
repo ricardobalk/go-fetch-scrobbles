@@ -7,16 +7,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 	"time"
 )
 
-/* Type definitions */
+var (
+	projectName = "go-fetch-scrobbles"
+	projectDesc = "Last.fm Scrobble Fetcher, written in Go"
+	projectVer = "alpha"
+	codeOwner = "Ricardo Balk"
+	license = "GNU GPLv3 or later"
+	repository = "https://github.com/ricardobalk/go-fetch-scrobbles"
+)
 
-// To parse and unparse this JSON data, add this code to your project and do:
-//
-//    topLevel, err := UnmarshalTopLevel(bytes)
-//    bytes, err = topLevel.Marshal()
+/* Type definitions */
 
 func UnmarshalTopLevel(data []byte) (TopLevel, error) {
 	var r TopLevel
@@ -124,8 +129,7 @@ func fetchScrobbles(apiKey string, username string) []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Golang; +https://github.com/ricardobalk/go-fetch-scrobbles)")
+	req.Header.Set("User-Agent", fmt.Sprintf("Mozilla/5.0 (compatible; %s; %s; +%s)", codeOwner, projectName, repository))
 	q := req.URL.Query()
 	q.Add("method", "user.getrecenttracks")
 	q.Add("user", username)
@@ -138,9 +142,7 @@ func fetchScrobbles(apiKey string, username string) []byte {
 		log.Fatal(getErr)
 	}
 
-	if res != nil {
-		defer res.Body.Close()
-	}
+	defer res.Body.Close()
 
 	body, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
@@ -150,23 +152,26 @@ func fetchScrobbles(apiKey string, username string) []byte {
 	return body
 }
 
-func parsedRawResponse(input []byte) string {
+func parsedRawResponse(input []byte) []byte {
 	scrobbles := TopLevel{}
 	jsonErr := json.Unmarshal(input, &scrobbles)
 	if jsonErr != nil {
 		log.Fatal(jsonErr)
 	}
 
-	bytes, err := json.Marshal(scrobbles.Recenttracks)
+	bytes, err := json.Marshal(&scrobbles)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return string(bytes[:])
+	return bytes
 }
 
-func buildList(body []byte) string {
+func buildList(body []byte) []byte {
 	scrobbles := TopLevel{}
-	var output string
+	var (
+		list string
+		output []byte
+		)
 
 	jsonErr := json.Unmarshal(body, &scrobbles)
 	if jsonErr != nil {
@@ -197,12 +202,14 @@ func buildList(body []byte) string {
 		}
 		parsedDate := time.Unix(date, 0).UTC()
 
-		output = output + fmt.Sprintf("%02d: %s - %s [%s] at %s\n", i+1, artist, song, album, parsedDate.String())
+		list = list + fmt.Sprintf("%02d: %s - %s [%s] at %s\n", i+1, artist, song, album, parsedDate.String())
 	}
+
+	output = []byte(list)
 	return output
 }
 
-func buildJSONResponse(input []byte) string {
+func buildJSONResponse(input []byte) []byte {
 	scrobbles := TopLevel{}
 	output := Scrobbles{}
 
@@ -242,10 +249,10 @@ func buildJSONResponse(input []byte) string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return string(bytes[:])
+	return bytes
 }
 
-func formatScrobbles(input []byte, format string) string {
+func formatScrobbles(input []byte, format string) []byte {
 	switch format {
 	case "raw":
 		return parsedRawResponse(input)
@@ -257,13 +264,14 @@ func formatScrobbles(input []byte, format string) string {
 		flag.Usage()
 		log.Fatal("Invalid output format.")
 	}
-	return ""
+	return nil
 }
 
 func main() {
 	apiTokenPtr := flag.String("api-token", "", "Last.fm API Token")
 	usernamePtr := flag.String("username", "Batmaniosaurus", "Username")
 	formatPtr := flag.String("format", "list", "Format of output, currently allowed values are default, list or raw.\nDefault output means processed JSON, list shows a list of songs and raw shows response data from Last.fm.")
+	serverPtr := flag.Bool("serve", false, "Provide output of app on local server instead of the terminal.")
 	flag.Parse()
 
 	if *apiTokenPtr == "" {
@@ -271,7 +279,36 @@ func main() {
 		log.Fatal("Missing Last.fm API token.")
 	}
 
-	scrobbles := fetchScrobbles(*apiTokenPtr, *usernamePtr)
-	formattedScrobbles := formatScrobbles(scrobbles, *formatPtr)
-	fmt.Print(formattedScrobbles)
+	if *serverPtr {
+	  serve(*apiTokenPtr, *usernamePtr, *formatPtr)
+	} else {
+		lastFmScrobbles := fetchScrobbles(*apiTokenPtr, *usernamePtr)
+		formattedScrobbles := formatScrobbles(lastFmScrobbles, *formatPtr)
+		printableString := string(formattedScrobbles[:])
+		fmt.Print(printableString)
+	}
+}
+
+func serve(lastFmApiToken string, username string, format string) {
+	var (
+		lastFmScrobbles []byte
+		responseExpirationTime time.Time = time.Now().Add(-15 * time.Second)
+	)
+
+	http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
+		if time.Since(responseExpirationTime).Seconds() > 15 {
+			lastFmScrobbles = fetchScrobbles(lastFmApiToken, username)
+			responseExpirationTime = time.Now().Add(15 * time.Second)
+		}
+
+		formattedScrobbles := formatScrobbles(lastFmScrobbles, format)
+
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Length", fmt.Sprintf("%d", len(formattedScrobbles)))
+		w.Header().Add("Server",  fmt.Sprintf("%s on %s %s", runtime.Version(), runtime.GOOS, runtime.GOARCH))
+		w.Write(formattedScrobbles)
+	})
+
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {log.Fatal(err)}
 }
