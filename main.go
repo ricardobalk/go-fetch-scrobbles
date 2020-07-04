@@ -15,10 +15,10 @@ import (
 var (
 	projectName = "go-fetch-scrobbles"
 	projectDesc = "Last.fm Scrobble Fetcher, written in Go"
-	projectVer = "alpha"
-	codeOwner = "Ricardo Balk"
-	license = "GNU GPLv3 or later"
-	repository = "https://github.com/ricardobalk/go-fetch-scrobbles"
+	projectVer  = "alpha"
+	codeOwner   = "Ricardo Balk"
+	license     = "GNU GPLv3 or later"
+	repository  = "https://github.com/ricardobalk/go-fetch-scrobbles"
 )
 
 /* Type definitions */
@@ -169,9 +169,9 @@ func parsedRawResponse(input []byte) []byte {
 func buildList(body []byte) []byte {
 	scrobbles := TopLevel{}
 	var (
-		list string
+		list   string
 		output []byte
-		)
+	)
 
 	jsonErr := json.Unmarshal(body, &scrobbles)
 	if jsonErr != nil {
@@ -280,7 +280,7 @@ func main() {
 	}
 
 	if *serverPtr {
-	  serve(*apiTokenPtr, *usernamePtr, *formatPtr)
+		serve(*apiTokenPtr, *usernamePtr, *formatPtr)
 	} else {
 		lastFmScrobbles := fetchScrobbles(*apiTokenPtr, *usernamePtr)
 		formattedScrobbles := formatScrobbles(lastFmScrobbles, *formatPtr)
@@ -291,11 +291,11 @@ func main() {
 
 func serve(lastFmApiToken string, username string, format string) {
 	var (
-		lastFmScrobbles []byte
+		lastFmScrobbles        []byte
 		responseExpirationTime time.Time = time.Now().Add(-15 * time.Second)
 	)
 
-	http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if time.Since(responseExpirationTime).Seconds() > 15 {
 			lastFmScrobbles = fetchScrobbles(lastFmApiToken, username)
 			responseExpirationTime = time.Now().Add(15 * time.Second)
@@ -305,10 +305,12 @@ func serve(lastFmApiToken string, username string, format string) {
 
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Content-Length", fmt.Sprintf("%d", len(formattedScrobbles)))
-		w.Header().Add("Server",  fmt.Sprintf("%s on %s %s", runtime.Version(), runtime.GOOS, runtime.GOARCH))
+		w.Header().Add("Server", fmt.Sprintf("%s on %s %s", runtime.Version(), runtime.GOOS, runtime.GOARCH))
 		w.Write(formattedScrobbles)
 	})
 
 	err := http.ListenAndServe(":8080", nil)
-	if err != nil {log.Fatal(err)}
+	if err != nil {
+		log.Fatal(err)
+	}
 }
